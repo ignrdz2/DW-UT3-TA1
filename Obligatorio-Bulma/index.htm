@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Tareas</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Evita el scroll vertical en toda la página */
+        }
+        .tasks {
+            min-height: 20vh;
+            width: 100%;
+        }
+
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .task-header {
+            display: flex;
+            align-items: center;
+        }
+
+        .task-title {
+            flex-grow: 1;
+        }
+
+        .priority-low {
+            background-color: #32bb70;
+        }
+
+        .priority-medium {
+            background-color: #f6be06;
+        }
+
+        .priority-high {
+            background-color: #f14a0e;
+        }
+
+        #addTaskBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .columns-container {
+            overflow-x: auto; /* Permitir scroll horizontal */
+            overflow-y: hidden; /* No permitir scroll vertical */
+            white-space: nowrap;
+            width: 100%;
+            height: 100%;
+            padding-top: 50px; /* Ajusta el espacio para los títulos */
+            border-radius: 25px;
+        }
+
+        .columns {
+            display: flex;
+            flex-wrap: nowrap; /* Sin wrapping para resoluciones grandes */
+            height: calc(100vh - 50px); /* Ajusta la altura de las columnas */
+            margin: 2px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden; /* Oculta el desbordamiento */
+        }
+
+        .tasks-container {
+            flex-grow: 1;
+            overflow-y: auto; /* Permite el desplazamiento vertical */
+            padding-top: 10px; /* Espacio entre el título y las tareas */
+        }
+
+        .column-title {
+            background-color: #ffffff; /* Color de fondo para el título */
+            padding: 10px;
+            margin: 0;
+            z-index: 3; /* Asegura que el título esté sobre la imagen de fondo */
+            position: -webkit-sticky; /* Soporte para Safari */
+            position: sticky;
+            top: 0; /* Fija el título en la parte superior */
+            border-radius: 25px;
+        }
+
+        /* Estilos para el modo oscuro */
+        [data-theme="dark"] .column-title {
+            color: #ffffff; /* Color de las letras en modo oscuro */
+            background-color: #333333; /* Color de fondo en modo oscuro */
+        }
+
+        @media screen and (max-width: 768px) {
+            .columns {
+                flex-wrap: wrap; /* En resoluciones más pequeñas, las columnas se envuelven */
+            }
+        }
+
+        @media screen and (max-width: 425px) {
+            .columns-container {
+                overflow-x: auto; /* Scroll horizontal */
+                overflow-y: hidden; /* No permitir scroll vertical */
+            }
+
+            .task-column {
+                width: 100%; /* Cada columna ocupa todo el ancho */
+            }
+        }
+    </style>
+</head>
+
+<body class="has-text-centered">
+    <div class="container">
+        <h2 class="title is-size-2">Gestor de Tareas</h2>
+        
+        <button class="button fa-solid fa-circle-half-stroke is-pulled-right" id="toggleModeBtn"></button>
+
+        <div class="select is-small is-pulled-right">
+            <select id="backgroundSelector">
+                <option value="Default">Default</option>
+                <option value="bg1.jpg">Fondo 1</option>
+                <option value="bg2.jpg">Fondo 2</option>
+                <option value="bg3.jpg">Fondo 3</option>
+                <option value="bg4.jpg">Fondo 4</option>
+                <option value="bg5.jpg">Fondo 5</option>
+                <option value="bg6.jpg">Fondo 6</option>
+            </select>
+        </div>
+
+        <div class="buttons is-centered">
+            <button class="button is-primary" id="addTaskBtn">Nueva Tarea</button>
+        </div>
+
+        <div id="columnsContainer" class="columns-container">
+            <div class="columns is-variable is-1-mobile is-2-tablet is-3-desktop is-4-widescreen is-5-fullhd">
+                <div class="column is-full-mobile is-half-tablet is-one-fifth-desktop task-column" id="backlog">
+                    <h4 class="title is-4 column-title">Backlog</h4>
+                    <div class="tasks-container">
+                        <div class="tasks"></div>
+                    </div>
+                </div>
+                <div class="column is-full-mobile is-half-tablet is-one-fifth-desktop task-column" id="todo">
+                    <h4 class="title is-4 column-title">To-Do</h4>
+                    <div class="tasks-container">
+                        <div class="tasks"></div>
+                    </div>
+                </div>
+                <div class="column is-full-mobile is-half-tablet is-one-fifth-desktop task-column" id="in-progress">
+                    <h4 class="title is-4 column-title">In-Progress</h4>
+                    <div class="tasks-container">
+                        <div class="tasks"></div>
+                    </div>
+                </div>
+                <div class="column is-full-mobile is-half-tablet is-one-fifth-desktop task-column" id="blocked">
+                    <h4 class="title is-4 column-title">Blocked</h4>
+                    <div class="tasks-container">
+                        <div class="tasks"></div>
+                    </div>
+                </div>
+                <div class="column is-full-mobile is-half-tablet is-one-fifth-desktop task-column" id="done">
+                    <h4 class="title is-4 column-title">Done</h4>
+                    <div class="tasks-container">
+                        <div class="tasks"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para crear/editar tareas -->
+        <div class="modal" id="taskModal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Tarea</p>
+                </header>
+                <section class="modal-card-body">
+                    <form id="taskForm">
+                        <div class="field">
+                            <label class="label">Título</label>
+                            <div class="control">
+                                <input class="input" type="text" id="taskTitle" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Descripción</label>
+                            <div class="control">
+                                <textarea class="textarea" id="taskDescription" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Asignado a</label>
+                            <div class="control">
+                                <div class="select">
+                                    <select id="taskAssigned">
+                                        <option value="Persona1">Juan</option>
+                                        <option value="Persona2">Diego</option>
+                                        <option value="Persona3">Álvaro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Prioridad</label>
+                            <div class="control">
+                                <div class="select">
+                                    <select id="taskPriority">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium">Medium</option>
+                                        <option value="High">High</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Estado</label>
+                            <div class="control">
+                                <div class="select">
+                                    <select id="taskStatus">
+                                        <option value="backlog">Backlog</option>
+                                        <option value="todo">To-Do</option>
+                                        <option value="in-progress">In-Progress</option>
+                                        <option value="blocked">Blocked</option>
+                                        <option value="done">Done</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Fecha límite</label>
+                            <div class="control">
+                                <input class="input" type="date" id="taskDeadline" required>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-success" id="saveTaskBtn">Guardar</button>
+                    <button class="button" id="cancelTaskBtn">Cancelar</button>
+                </footer>
+            </div>
+        </div>
+
+        <script src="script.js"></script>
+</body>
+
+</html>
